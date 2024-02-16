@@ -1,0 +1,50 @@
+{
+    "items": {
+        "1": [
+            {
+                "_comment": "this is soft tearsup since priority is <=100",
+                "stat": "tears",
+                "priority": 1,
+                "variant": "flat",
+                "value": 0.7
+            },
+            {
+                "_comment": "this is 'normal' damage since priority is <=100",
+                "stat": "damage",
+                "priority": 1,
+                "variant": "flat",
+                "value": 1.2
+            },
+            {
+                "stat": "damage",
+                "priority": 5,
+                "variant": "multi",
+                "value": 1.25
+            }
+        ],
+        "2": [
+            {
+                "stat": "tears",
+                "priority": 5,
+                "variant": "multi",
+                "value": 0.51
+            }
+        ]
+    },
+    "nulls": {
+        "41": [
+            {
+                "stat": "damage",
+                "priority": 1,
+                "variant": "flat",
+                "value": 7.0
+            },
+            {
+                "stat": "range",
+                "priority": 1,
+                "variant": "flat",
+                "value": 3.0
+            }
+        ]
+    }
+}

@@ -114,87 +114,98 @@ HOOK_METHOD(Entity_Player, EvaluateItems, () -> void) {
 	}
 	int ItemCount = 0;
 	int CurrentPriority = 0;
-	float DamageUnderRoot = 1.0;
+	float DamageUnderRoot = 0.0;
 	float SoftTears = 0.0;
+	bool DamageSqrtApplied = false;
 	bool SoftTearsApplied = false;
 
 	float *PStatToAlter=nullptr;
 	PStatToAlter = &DamageUnderRoot;
 	
-	float* MaxFireDelayPtr = (float*)((int)this + 0x13a8);
 
 	this->_damage = 3.5f;
-	*MaxFireDelayPtr = 10.0f;
+	this->_maxfiredelay = 10.0f;
 
-	//todo: split into multiple steps, 1) get all stats in an array/vec/whatever, 2) sort it all by priority and stuff
-	for (int cidx = 0; cidx < this->GetCollectiblesList().size(); cidx++) {		//3) apply in a separate loop
+	std::vector<StatsRewrite::StatHolder> FullStatsList;
+
+	FullStatsList.push_back(StatsRewrite::DamageMultiInRoot);		//the mandatory ones to make damage values match the vanilla
+	FullStatsList.push_back(StatsRewrite::DamageAddInRoot);
+
+	int AmountToAdd = 0;
+	//todo: add other sources of stats e.g. coll effects, char start stats, etc...
+	for (int cidx = 0; cidx < this->GetCollectiblesList().size(); cidx++) {
 		ItemCount = this->GetCollectiblesList()[cidx];
 		if (stats.ItemsList.find(cidx) != stats.ItemsList.end()) {
 			if (ItemCount) {
 				for (size_t stat_idx = 0; stat_idx < stats.ItemsList[cidx].size(); stat_idx++) {
-					StatsRewrite::StatHolder stat = stats.ItemsList[cidx][stat_idx];
-					CurrentPriority = stat.Priority;
-					if (stat.Type == StatsRewrite::StatType::Damage) {
-						if (CurrentPriority < 101) {	//TEM, DON'T FORGET, you should have your stats ordered by priority!!
-							PStatToAlter = &DamageUnderRoot;
-						}
-						else {
-							PStatToAlter = &(this->_damage);
-						}
-					}
-					else if (stat.Type == StatsRewrite::StatType::Tears) {
-						if (CurrentPriority < 101) {
-							PStatToAlter = &SoftTears;
-						}
-						else {
-							if (!SoftTearsApplied) {
-								PStatToAlter = MaxFireDelayPtr;
-								*(PStatToAlter) = 16.0f - 6.0f * powf(SoftTears * 1.3f + 1.0f, 0.5f);
-								*(PStatToAlter) = std::max(5.0f, *(PStatToAlter));	//soft cap, will figure out cap bypass later
-								SoftTearsApplied = true;
-							}
-							PStatToAlter = nullptr;	//lazy workaround, will commit to zhl later!
-						}
-					}
-					else{
-						PStatToAlter = nullptr;	//todo: get other stats working!
-					}
-					if (PStatToAlter ==nullptr) {
-						continue;
-					}
-					if (stat.Variant == StatsRewrite::StatVariant::Flat) {
-						for (int i = 0; i < ItemCount; i++) {
-							*(PStatToAlter) += stat.Value;
-							if (!stat.ShouldStack) {
-								break;
-							}
-						}
-					}
-					else if (stat.Variant == StatsRewrite::StatVariant::Mutliplier) {
-						for (int i = 0; i < ItemCount; i++) {
-							*(PStatToAlter) *= stat.Value;
-							if (!stat.ShouldStack) {
-								break;
-							}
-						}
+					StatsRewrite::StatHolder& stat = stats.ItemsList[cidx][stat_idx];
+					AmountToAdd = 1 + (ItemCount - 1) * stat.ShouldStack;		//todo: split damage into two types, poison and no poison
+					for (int i = 0; i < AmountToAdd;i++) {
+						FullStatsList.push_back(stat);
 					}
 				}
 			}
-			
 		}
 	}
-	DamageUnderRoot = powf(DamageUnderRoot, 0.5);
-	this->_damage *= DamageUnderRoot;
+
+
+	std::stable_sort(FullStatsList.begin(), FullStatsList.end(), StatsRewrite::CompareHoldersByVariant);	//multi after flat
+	std::stable_sort(FullStatsList.begin(), FullStatsList.end(),StatsRewrite::CompareHoldersByPriority);	//asc order
+
+
+	for (StatsRewrite::StatHolder& stat : FullStatsList) {
+		switch (stat.Type) {
+		case StatsRewrite::StatType::Damage:
+			if (stat.Priority < 101) {	//hey, tem, you didn't forget
+				PStatToAlter = &DamageUnderRoot;
+			}
+			else {
+				if (!DamageSqrtApplied) {
+					this->_damage = this->_damage * sqrtf(DamageUnderRoot);
+					DamageSqrtApplied = true;
+				}
+				PStatToAlter = &(this->_damage);
+			}
+			break;
+		case StatsRewrite::StatType::Tears:
+			if (stat.Priority < 101) {
+				PStatToAlter = &SoftTears;
+			}
+			else {
+				if (!SoftTearsApplied) {
+					this->_maxfiredelay = StatsRewrite::CalculateSoftTears(this, SoftTears);
+					SoftTearsApplied = true;
+				}
+				PStatToAlter = &(this->_maxfiredelay);
+			}
+			break;
+		default:
+			PStatToAlter = nullptr;	//todo: get other stats working!
+			break;
+		}
+
+		if (PStatToAlter == nullptr) {
+			continue;
+		}
+
+		if (stat.Variant == StatsRewrite::StatVariant::Flat) {
+			*(PStatToAlter) += stat.Value;
+		}
+		else if (stat.Variant == StatsRewrite::StatVariant::Mutliplier) {
+			*(PStatToAlter) *= stat.Value;
+		}
+	}
+	if (!DamageSqrtApplied) {
+		this->_damage = this->_damage * sqrtf(DamageUnderRoot);
+		DamageSqrtApplied = true;
+	}
 	if (!SoftTearsApplied) {
-		PStatToAlter = MaxFireDelayPtr;
-		*(PStatToAlter) = 16.0f - 6.0f * powf(SoftTears * 1.3f + 1.0f, 0.5f);
-		*(PStatToAlter) = std::max(5.0f,*(PStatToAlter));	//soft cap, will figure out cap bypass later
+		this->_maxfiredelay = StatsRewrite::CalculateSoftTears(this,SoftTears);
 		SoftTearsApplied = true;
 	}
 	logViewer.AddLog("[REPENTOGON]", "Hello from the stat rewrite!\n");
 	return;
 }
-
 
 
 static std::vector<std::string> ParseCommand2(const std::string& command, int size = 0) {

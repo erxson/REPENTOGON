@@ -2002,11 +2002,11 @@ HOOK_METHOD(Entity_Player, ControlActiveItem, (int slot) -> void) {
 	cachedMaxCharge.clear();
 }
 
-HOOK_METHOD(Entity_Player, AddActiveCharge, (unsigned int charge, int slot, bool unk, bool overcharge, bool force) -> int) {
+HOOK_METHOD(Entity_Player, AddActiveCharge, (int charge, int slot, bool flashHUD, bool overcharge, bool force) -> int) {
 	cacheMaxChargeCallback = true;
 	cachedMaxCharge.clear();
 
-	const int result = super(charge, slot, unk, overcharge, force);
+	const int result = super(charge, slot, flashHUD, overcharge, force);
 
 	cacheMaxChargeCallback = false;
 	cachedMaxCharge.clear();
@@ -2419,7 +2419,7 @@ HOOK_STATIC(Manager, RecordPlayerCompletion, (int completion) -> void, __stdcall
 					return;
 			}
 			else if (lua_isinteger(L, -1)) {
-				int retCompletion = lua_tointeger(L, -1);
+				int retCompletion = (int)lua_tointeger(L, -1);
 				if (retCompletion >= 0 && retCompletion <= 17)
 					completion = retCompletion;
 				else
@@ -4312,7 +4312,7 @@ HOOK_METHOD(ItemPool, ForceAddPillEffect, (int32_t ID)->int) {
 		ret = super(ID);
 	};
 
-//POST_FORCE_PILL_EFFECT (1129)
+	//POST_FORCE_PILL_EFFECT (1129)
 	callbackid = 1129;
 	if (CallbackState.test(callbackid - 1000)) {
 		lua_State* L = g_LuaEngine->_state;
@@ -4342,9 +4342,22 @@ inline int GetGlowingHourglassSlot(GameState* gameState) { //g_Game->_currentGlo
 	return -1;
 }
 
-//POST_GLOWING_HOURGLASS_SAVE (1300)
+//PRE/POST_GLOWING_HOURGLASS_SAVE (1300 - 1302)
 HOOK_METHOD(Game, SaveState, (GameState* gameState) -> void) {
 	int currentSlot = GetGlowingHourglassSlot(gameState);
+
+	const int preCallbackId = 1302;
+	if (CallbackState.test(preCallbackId - 1000)) {
+		lua_State* L = g_LuaEngine->_state;
+		lua::LuaStackProtector protector(L);
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
+
+		lua::LuaResults result = lua::LuaCaller(L).push(preCallbackId)
+			.pushnil()
+			.push(currentSlot)
+			.call(1);
+	}
 
 	super(gameState);
 
@@ -4352,14 +4365,14 @@ HOOK_METHOD(Game, SaveState, (GameState* gameState) -> void) {
 		return;
 	}
 
-	const int callbackid = 1300;
-	if (CallbackState.test(callbackid - 1000)) {
+	const int postCallbackId = 1300;
+	if (CallbackState.test(postCallbackId - 1000)) {
 		lua_State* L = g_LuaEngine->_state;
 		lua::LuaStackProtector protector(L);
 
 		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
 
-		lua::LuaResults result = lua::LuaCaller(L).push(callbackid)
+		lua::LuaResults result = lua::LuaCaller(L).push(postCallbackId)
 			.pushnil()
 			.push(currentSlot)
 			.call(1);
@@ -4367,9 +4380,25 @@ HOOK_METHOD(Game, SaveState, (GameState* gameState) -> void) {
 	return;
 }
 
-//POST_GLOWING_HOURGLASS_LOAD (1301)
+//PRE/POST_GLOWING_HOURGLASS_LOAD (1301 - 1303)
 HOOK_METHOD(Game, RestoreState, (GameState* gameState, bool startGame) -> void) {
 	int currentSlot = GetGlowingHourglassSlot(gameState);
+
+	if (currentSlot != -1)
+	{
+		const int preCallbackId = 1303;
+		if (CallbackState.test(preCallbackId - 1000)) {
+			lua_State* L = g_LuaEngine->_state;
+			lua::LuaStackProtector protector(L);
+
+			lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
+
+			lua::LuaResults result = lua::LuaCaller(L).push(preCallbackId)
+				.pushnil()
+				.push(currentSlot)
+				.call(1);
+		}
+	}
 
 	super(gameState, startGame);
 
@@ -4377,19 +4406,75 @@ HOOK_METHOD(Game, RestoreState, (GameState* gameState, bool startGame) -> void) 
 		return;
 	}
 
-	const int callbackid = 1301;
-	if (CallbackState.test(callbackid - 1000)) {
+	const int postCallbackId = 1301;
+	if (CallbackState.test(postCallbackId - 1000)) {
 		lua_State* L = g_LuaEngine->_state;
 		lua::LuaStackProtector protector(L);
 
 		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
 
-		lua::LuaResults result = lua::LuaCaller(L).push(callbackid)
+		lua::LuaResults result = lua::LuaCaller(L).push(postCallbackId)
 			.pushnil()
 			.push(currentSlot)
 			.call(1);
 	}
 	return;
+}
+
+//PRE/POST_ENTITY_SET_COLOR (1486/1487)
+HOOK_METHOD(Entity, SetColor, (ColorMod* color, int duration, int priority, bool fadeOut, bool share) -> void) {
+	const int preCallbackId = 1485;
+	ColorMod colorCopy;
+
+	if (CallbackState.test(preCallbackId - 1000)) {
+		lua_State* L = g_LuaEngine->_state;
+		lua::LuaStackProtector protector(L);
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
+
+		lua::LuaResults result = lua::LuaCaller(L).push(preCallbackId)
+			.push(this->_type)
+			.push(this, lua::Metatables::ENTITY)
+			.push(color, lua::Metatables::COLOR)
+			.push(duration)
+			.push(priority)
+			.push(fadeOut)
+			.push(share)
+			.call(1);
+
+		if (!result) {
+			if (lua_isboolean(L, -1) && !lua_toboolean(L, -1)) {
+				return;
+			}
+			else if (lua_isuserdata(L, -1)) {
+				// We need to copy the returned color in case the Lua stack is cleaned up in order to avoid unexpected behavior.
+				ColorMod* returnedColor = lua::GetUserdata<ColorMod*>(L, -1, lua::Metatables::COLOR, "Color");
+				colorCopy = *returnedColor;
+				color = &colorCopy;
+			}
+		}
+	}
+
+	super(color, duration, priority, fadeOut, share);
+
+	const int postCallbackId = 1486;
+
+	if (CallbackState.test(postCallbackId - 1000)) {
+		lua_State* L = g_LuaEngine->_state;
+		lua::LuaStackProtector protector(L);
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
+
+		lua::LuaResults result = lua::LuaCaller(L).push(postCallbackId)
+			.push(this->_type)
+			.push(this, lua::Metatables::ENTITY)
+			.push(color)
+			.push(duration)
+			.push(priority)
+			.push(fadeOut)
+			.push(share)
+			.call(1);
+	}
 }
 
 inline bool IsCoopBaby(Entity_Player* player) {
@@ -4500,4 +4585,77 @@ HOOK_METHOD(Entity_Player, RemoveCostume, (ItemConfig_Item* item) -> void) {
 			}
 		}
 	}
+}
+
+//MC_POST_PICKUP_SELECTION_REWORK(37)
+int requestedPickupVariant = 0;
+int requestedPickupSubType = 0;
+uint32_t pickupInitSeed = 0;
+
+HOOK_METHOD(Entity_Pickup, Init, (uint32_t type, int variant, int subType, uint32_t seed) -> void)
+{
+	requestedPickupVariant = variant;
+	requestedPickupSubType = subType;
+	pickupInitSeed = seed;
+
+	super(type, variant, subType, seed);
+}
+
+HOOK_STATIC(LuaEngine, PostPickupSelection, (Entity_Pickup* pickup, int* variant, int* subType) -> void, __stdcall)
+{
+	const int callbackId = 37;
+	lua_State* L = g_LuaEngine->_state;
+
+	if (VanillaCallbackState.test(callbackId)) {
+		RNG rng = RNG();
+		rng.SetSeed(pickupInitSeed, 3); // not using 35 as it's what's used by the selection RNG
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
+		lua::LuaResults failure = lua::LuaCaller(L).push(callbackId)
+			.pushnil()
+			.push(pickup, lua::Metatables::ENTITY_PICKUP)
+			.push(*variant)
+			.push(*subType)
+			.push(requestedPickupVariant)
+			.push(requestedPickupSubType)
+			.push(&rng, lua::Metatables::RNG)
+			.call(1);
+
+		if (failure || !lua_istable(L, -1))
+		{
+			return;
+		}
+
+		lua_rawgeti(L, -1, 1);
+		*variant = (int)luaL_optinteger(L, -1, *variant);
+		lua_pop(L, 1);
+
+		lua_rawgeti(L, -1, 2);
+		*subType = (int)luaL_optinteger(L, -1, *subType);
+		lua_pop(L, 1);
+	}
+}
+
+// GET_STATUS_EFFECT_TARGET (1485)
+HOOK_METHOD(Entity, GetStatusEffectTarget, () -> Entity*) {
+	const int callbackid = 1485;
+
+	if (CallbackState.test(callbackid - 1000)) {
+		lua_State* L = g_LuaEngine->_state;
+		lua::LuaStackProtector protector(L);
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, g_LuaEngine->runCallbackRegistry->key);
+
+		lua::LuaResults results = lua::LuaCaller(L).push(callbackid)
+			.push(this->_type)
+			.push(this, lua::Metatables::ENTITY)
+			.call(1);
+
+		if (!results) {
+			if (lua_isuserdata(L, -1)) {
+				return lua::GetUserdata<Entity*>(L, -1, lua::Metatables::ENTITY, "Entity");
+			}
+		}
+	}
+	return super();
 }

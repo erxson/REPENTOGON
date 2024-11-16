@@ -181,6 +181,26 @@ LUA_FUNCTION(Lua_FamiliarInvalidateCachedMultiplier) {
 	return 0;
 }
 
+LUA_FUNCTION(Lua_FamiliarIsLilDelirium) {
+	auto* fam = lua::GetUserdata<Entity_Familiar*>(L, 1, lua::Metatables::ENTITY_FAMILIAR, "EntityFamiliar");
+
+	lua_pushboolean(L, fam->_isLilDelirium);
+	return 1;
+}
+
+LUA_FUNCTION(Lua_SetLilDelirium) {
+	auto* fam = lua::GetUserdata<Entity_Familiar*>(L, 1, lua::Metatables::ENTITY_FAMILIAR, "EntityFamiliar");
+	bool isLilDelirium = lua_toboolean(L, 2);
+
+	fam->_isLilDelirium = isLilDelirium;
+	
+	if (isLilDelirium) {
+		fam->delirium_morph();
+	}
+
+	return 0;
+}
+
 HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 	super();
 
@@ -188,7 +208,8 @@ HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 
 	luaL_Reg functions[] = {
 		{ "GetFollowerPriority", Lua_FamiliarGetFollowerPriority },
-		{ "GetPathFinder", Lua_FamiliarGetPathFinder },
+		{ "GetPathFinder", Lua_FamiliarGetPathFinder }, // depreciated
+		{ "GetPathfinder", Lua_FamiliarGetPathFinder },
 		{ "TryAimAtMarkedTarget", Lua_FamiliarTryAimAtMarkedTarget },
 		{ "TriggerRoomClear", Lua_FamiliarTriggerRoomClear },
 		{ "UpdateDirtColor", Lua_FamiliarUpdateDirtColor },
@@ -205,6 +226,8 @@ HOOK_METHOD(LuaEngine, RegisterClasses, () -> void) {
 		{ "GetItemConfig", Lua_FamiliarGetItemConfig },
 		{ "InvalidateCachedMultiplier", Lua_FamiliarInvalidateCachedMultiplier },
 		{ "GetMultiplier", Lua_FamiliarGetMultiplier },
+		{ "IsLilDelirium", Lua_FamiliarIsLilDelirium },
+		{ "SetLilDelirium", Lua_SetLilDelirium },
 		{ NULL, NULL }
 	};
 

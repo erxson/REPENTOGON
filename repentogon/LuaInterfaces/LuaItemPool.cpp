@@ -5,7 +5,7 @@
 #include "../Patches/CustomItemPools.h"
 
 inline bool IsValidPool(int poolType) {
-	return (poolType >= POOL_TREASURE && poolType < CustomItemPool::itemPools.size() + NUM_ITEMPOOLS);
+	return (poolType >= POOL_TREASURE && poolType < (int)CustomItemPool::itemPools.size() + NUM_ITEMPOOLS);
 }
 
 inline ItemPool_Item* GetItemPoolItem(int poolType) {
@@ -17,6 +17,10 @@ inline ItemPool_Item* GetItemPoolItem(int poolType) {
 
 inline bool Lua_NotPassedOrNil(lua_State* L, int narg) {
 	return (lua_gettop(L) < narg || lua_isnil(L, narg));
+}
+
+inline void EnsureValidSeed(uint32_t& seed) {
+	seed = seed == 0 ? 1 : seed;
 }
 
 inline bool isCollectibleRemoved(ItemPool* itemPool, uint32_t collectibleID) {
@@ -32,11 +36,13 @@ inline bool isCollectibleBlacklisted(ItemPool* itemPool, uint32_t collectibleID)
 LUA_FUNCTION(Lua_ItemPoolGetCardEx)
 {
 	ItemPool* itemPool = lua::GetUserdata<ItemPool*>(L, 1, lua::Metatables::ITEM_POOL, "ItemPool");
-	int seed = (int)luaL_checkinteger(L, 2);
+	unsigned int seed = (unsigned int)luaL_checkinteger(L, 2);
 	int specialChance = (int)luaL_checkinteger(L, 3);
 	int runeChance = (int)luaL_checkinteger(L, 4);
 	int suitChance = (int)luaL_checkinteger(L, 5);
 	bool allowNonCards = lua::luaL_checkboolean(L, 6);
+
+	EnsureValidSeed(seed);
 	lua_pushinteger(L, itemPool->GetCardEx(seed, specialChance, runeChance, suitChance, allowNonCards));
 	return 1;
 }
@@ -46,11 +52,10 @@ LUA_FUNCTION(Lua_ItemPoolGetCollectibleEx) {
 	int poolType = (int)luaL_checkinteger(L, 2);
 	bool decrease = lua::luaL_optboolean(L, 3, false);
 	uint32_t seed = (unsigned int)luaL_optinteger(L, 4, Isaac::genrand_int32());
-	if (seed == 0) {
-		seed = 1;
-	}
 	int defaultItem = (int)luaL_optinteger(L, 5, COLLECTIBLE_NULL);
 	uint32_t flags = (unsigned int)luaL_optinteger(L, 6, 0);
+
+	EnsureValidSeed(seed);
 
 	if (poolType == POOL_NULL) {
 		lua_pushinteger(L, COLLECTIBLE_NULL);
@@ -73,7 +78,7 @@ LUA_FUNCTION(Lua_ItemPoolGetCollectibleEx) {
 inline int GetChaosPoolEx(ItemPool* itemPool, RNG* rng, std::unordered_map<int, bool> filter, bool isWhitelist) {
 	WeightedOutcomePicker picker;
 
-	for (int poolType = POOL_TREASURE; poolType < CustomItemPool::itemPools.size() + NUM_ITEMPOOLS; poolType++) {
+	for (int poolType = POOL_TREASURE; poolType < (int)CustomItemPool::itemPools.size() + NUM_ITEMPOOLS; poolType++) {
 		if (isWhitelist != (filter.find(poolType) != filter.end())) {
 			continue;
 		}
@@ -81,11 +86,16 @@ inline int GetChaosPoolEx(ItemPool* itemPool, RNG* rng, std::unordered_map<int, 
 		ItemPool_Item* pool = GetItemPoolItem(poolType);
 
 		const uint32_t scaleFactor = 100;
-		WeightedOutcomePicker_Outcome outcome{poolType, (uint32_t)(pool->_totalWeight * scaleFactor)};
+		WeightedOutcomePicker_Outcome outcome{ (uint32_t)poolType, (uint32_t)(pool->_totalWeight * scaleFactor) };
 		picker.AddOutcomeWeight(outcome, false);
 	}
 	
 	rng->Next();
+
+	if (picker.GetOutcomes()->empty())
+	{
+		return POOL_NULL;
+	}
 
 	RNG pickerRNG;
 	pickerRNG.SetSeed(rng->_seed, 35);
@@ -97,6 +107,8 @@ LUA_FUNCTION(Lua_ItemPoolGetRandomPool) {
 	ItemPool* itemPool = lua::GetUserdata<ItemPool*>(L, 1, lua::Metatables::ITEM_POOL, "ItemPool");
 	RNG* rng = lua::GetUserdata<RNG*>(L, 2, lua::Metatables::RNG, "RNG");
 	bool advancedSearch = lua::luaL_optboolean(L, 3, false);
+
+	EnsureValidSeed(rng->_seed);
 
 	if (!advancedSearch) {
 		lua_pushinteger(L, itemPool->get_chaos_pool(rng));
@@ -146,11 +158,12 @@ LUA_FUNCTION(Lua_ItemPoolPickCollectible) {
 	if (rng == nullptr) {
 		RNG tempRNG;
 		uint32_t seed = Isaac::genrand_int32();
-		seed = seed != 0 ? seed : 1;
+		EnsureValidSeed(seed);
 		tempRNG.SetSeed(seed, 4);
 		targetWeight = tempRNG.RandomFloat() * pool->_totalWeight;
 	}
 	else {
+		EnsureValidSeed(rng->_seed);
 		targetWeight = rng->RandomFloat() * pool->_totalWeight;
 	}
 
@@ -225,6 +238,8 @@ LUA_FUNCTION(Lua_ItemPoolGetCollectibleFromList) {
 	unsigned int defaultItem = (unsigned int)luaL_optinteger(L, 4, 25); //COLLECTIBLE_BREAKFAST
 	bool addToBlacklist = lua::luaL_optboolean(L, 5, true);
 	bool excludeLockedItems = lua::luaL_optboolean(L, 6, false);
+
+	EnsureValidSeed(seed);
 	lua_pushinteger(L, itemPool->GetCollectibleFromList(list, length, seed, defaultItem, addToBlacklist, excludeLockedItems));
 
 	// delete the array
@@ -257,18 +272,15 @@ LUA_FUNCTION(Lua_ItemPoolTryBibleMorph) {
 		return 1;
 	}
 
-	lua_pushboolean(L, rng->RandomInt(pool->_totalWeight) < pool->_bibleUpgrade);
+	lua_pushboolean(L, rng->RandomInt((uint32_t)pool->_totalWeight) < pool->_bibleUpgrade);
 	return 1;
 }
 
 LUA_FUNCTION(Lua_ItemPoolTryMagicSkinMorph) {
 	ItemPool* itemPool = lua::GetUserdata<ItemPool*>(L, 1, lua::Metatables::ITEM_POOL, "ItemPool");
-	uint32_t seed = (unsigned int)luaL_optinteger(L, 2, Isaac::genrand_int32());
-	if (seed == 0)
-	{
-		seed = 1;
-	}
+	uint32_t seed = (uint32_t)luaL_optinteger(L, 2, Isaac::genrand_int32());
 	
+	EnsureValidSeed(seed);
 	lua_pushboolean(L, itemPool->TryReplaceWithMagicSkin(seed));
 	return 1;
 }
@@ -290,7 +302,7 @@ LUA_FUNCTION(Lua_ItemPoolTryRosaryMorph) {
 		return 1;
 	}
 
-	lua_pushboolean(L, rng->RandomInt(pool->_totalWeight) < trinketMultiplier);
+	lua_pushboolean(L, rng->RandomInt((uint32_t)pool->_totalWeight) < trinketMultiplier);
 	return 1;
 }
 
@@ -531,7 +543,7 @@ LUA_FUNCTION(Lua_ItemPoolResetCollectible) {
 	ItemPool* itemPool = lua::GetUserdata<ItemPool*>(L, 1, lua::Metatables::ITEM_POOL, "ItemPool");
 	const int collectible = (int)luaL_checkinteger(L, 2);
 
-	if (collectible < COLLECTIBLE_NULL || collectible >= g_Manager->GetItemConfig()->GetCollectibles()->size()) {
+	if (collectible < COLLECTIBLE_NULL || collectible >= (int)g_Manager->GetItemConfig()->GetCollectibles()->size()) {
 		return luaL_argerror(L, 2, "Invalid Collectible");
 	}
 

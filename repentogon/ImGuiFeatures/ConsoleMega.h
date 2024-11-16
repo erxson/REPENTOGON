@@ -6,6 +6,7 @@
 #include "LuaCore.h"
 #include "UnifontSupport.h"
 #include "Lang.h"
+#include "../REPENTOGONOptions.h"
 
 #include <sstream>
 #include <cctype>
@@ -156,6 +157,10 @@ struct ConsoleMega : ImGuiWindowObject {
 
     void RegisterMacro(const char* macroName, std::vector<std::string> &macroCommands) {
         macros.push_back(ConsoleMacro(macroName, &macroCommands));
+    }
+
+    bool ShouldCloseImGuiOnPressEnter() const {
+      return enabled && focused && !inputBuf[0];
     }
 
     ConsoleMega() : ImGuiWindowObject("Console")
@@ -323,8 +328,6 @@ struct ConsoleMega : ImGuiWindowObject {
             focused = ImGui::IsWindowFocused();
             AddWindowContextMenu();
             std::deque<Console_HistoryEntry>* history = &g_Game->GetConsole()->_history;
-
-            ImGui::SetWindowFontScale(1.0f);
 
             // fill remaining window space minus the current font size (+ padding). fixes issue where the input is outside the window frame
             bool textInputScrollbarVisible = imFontUnifont->CalcTextSizeA(imFontUnifont->FontSize, FLT_MAX, 0.0f, inputBuf, inputBuf + strlen(inputBuf)).x * imFontUnifont->Scale > ImGui::GetContentRegionAvail().x;
@@ -1111,9 +1114,9 @@ struct ConsoleMega : ImGuiWindowObject {
                             break;
                         }
                         case MODFOLDER: {
-                            for (auto& node : XMLStuff.ModData->nodes) {
-                                if (node.second["enabled"] == "true") {
-                                    entries.insert(AutocompleteEntry(node.second["realdirectory"], node.second["name"]));
+                            for (ModEntry* node : g_Manager->GetModManager()->_mods) {
+                                if (node->IsEnabled()) {
+                                    entries.insert(AutocompleteEntry(node->GetDir(), node->GetName()));
                                 }
                             }
                             break;
@@ -1212,7 +1215,7 @@ struct ConsoleMega : ImGuiWindowObject {
                             [](unsigned char c) { return std::tolower(c); });
 
                         if (lowerText.rfind(lowerBuf, 0) == 0 || lowerDesc.find(lowerDescBuf) != std::string::npos) {
-                            if (autocompleteBuffer.size() > 10) {       //autocomplete result cap is defined here
+                            if (autocompleteBuffer.size() > repentogonOptions.consoleAutofillLimit) {       //autocomplete result cap is defined here
                                 break;
                             };
                             autocompleteBuffer.push_back(entry);

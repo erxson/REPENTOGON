@@ -16,12 +16,12 @@ Now accepts an optional `bool` to determine if [EntityPlayer](EntityPlayer.md):E
 
 ___
 ### AddCollectibleEffect, () {: aria-label='Modified Functions' }
-#### void AddCollectibleEffect ( [CollectibleType](https://wofsauge.github.io/IsaacDocs/rep/enums/CollectibleType.html) ctype, bool applycostume, int cooldown = vanillacd, bool additive = true ) {: .copyable aria-label='Modified Functions' }
+#### void AddCollectibleEffect ( [CollectibleType](https://wofsauge.github.io/IsaacDocs/rep/enums/CollectibleType.html) ctype, boolean applycostume, int cooldown = vanillacd, boolean additive = true ) {: .copyable aria-label='Modified Functions' }
 Shortcut of TemporaryEffects:AddCollectibleEffect with extra args to handle cooldown. The additive parameter determines if the cooldown should be added to the preexistent cooldown value or if it should be set for that value. You can use negative cooldown values with additive to reduce preexistent cooldown.
 
 ___
 ### AddNullItemEffect, () {: aria-label='Modified Functions' }
-#### void AddNullItemEffect ( int nullItemid, bool applycostume, int cooldown = vanillacd, bool additive = true ) {: .copyable aria-label='Modified Functions' }
+#### void AddNullItemEffect ( int nullItemid, boolean applycostume, int cooldown = vanillacd, boolean additive = true ) {: .copyable aria-label='Modified Functions' }
 Shortcut of TemporaryEffects:AddNullItemEffect with extra args to handle cooldown. The additive parameter determines if the cooldown should be added to the preexistent cooldown value or if it should be set for that value. You can use negative cooldown values with additive to reduce preexistent cooldown.
 
 ___
@@ -80,6 +80,13 @@ Returns the true amount of charge added, which may have been capped by the targe
 ___
 ### AddBoneOrbital () {: aria-label='Functions' }
 #### void AddBoneOrbital ( [Vector](Vector.md) Position ) {: .copyable aria-label='Functions' }
+
+___
+### AddCustomCacheTag () {: aria-label='Functions' }
+#### void AddCustomCacheTag ( string OR \{string, string, ...\}, boolean EvaluateItems = false ) {: .copyable aria-label='Functions' }
+Add CustomCacheTag(s) to be evaluated next time EvaluateItems runs (which is right now, if the optional boolean is passed).
+
+See [items.xml](xml/items.md) for more information on custom caches.
 
 ___
 ### AddInnateCollectible () {: aria-label='Functions' }
@@ -154,7 +161,7 @@ ___
 
 ___
 ### CanOverrideActiveItem () {: aria-label='Functions' }
-#### boolean CanOverrideActiveItem ( [CollectibleType](https://wofsauge.github.io/IsaacDocs/rep/enums/CollectibleType.html) Collectible ) {: .copyable aria-label='Functions' }
+#### boolean CanOverrideActiveItem ( [ActiveSlot](https://wofsauge.github.io/IsaacDocs/rep/enums/ActiveSlot.html) Slot ) {: .copyable aria-label='Functions' }
 
 ___
 ### CanUsePill () {: aria-label='Functions' }
@@ -206,6 +213,10 @@ ___
 ???+ info "Info"
     If the player has Tech X, this function will fire an [EntityLaser](EntityLaser.md) as well. The laser will have the Brimstone ball effect as a parent, it's unclear if the effect also links back to the laser.
 
+___
+### GetActionHoldDrop () {: aria-label='Functions' }
+#### int GetActionHoldDrop ( ) {: .copyable aria-label='Functions' }
+How long the player holds the drop-button.
 ___
 ### GetActiveItemDesc () {: aria-label='Functions' }
 #### [ActiveItemDesc](https://wofsauge.github.io/IsaacDocs/rep/PlayerTypes_ActiveItemDesc.html) GetActiveItemDesc ( [ActiveSlot](https://wofsauge.github.io/IsaacDocs/rep/enums/ActiveSlot.html) Slot = ActiveSlot.SLOT_PRIMARY ) {: .copyable aria-label='Functions' }
@@ -330,6 +341,13 @@ ___
 Returns a table of [CostumeSpriteDesc](CostumeSpriteDesc.md).
 
 ___
+### GetCustomCacheValue () {: aria-label='Functions' }
+#### float GetCustomCacheValue ( string CustomCacheTag ) {: .copyable aria-label='Functions' }
+Returns the current cached value for the specified CustomCacheTag. Will return `0` by default if the provided tag has not been evaluated.
+
+See [items.xml](xml/items.md) for more information on custom caches.
+
+___
 ### GetD8DamageModifier () {: aria-label='Functions' }
 #### int GetD8DamageModifier ( ) {: .copyable aria-label='Functions' }
 
@@ -435,6 +453,10 @@ ___
 #### [KColor](https://wofsauge.github.io/IsaacDocs/rep/KColor.html) GetFootprintColor ( boolean LeftFootprint ) {: .copyable aria-label='Functions' }
 
 ___
+### GetForgottenSwapFormCooldown () {: aria-label='Functions' }
+#### int GetForgottenSwapFormCooldown ( ) {: .copyable aria-label='Functions' }
+
+___
 ### GetGlitchBabySubType () {: aria-label='Functions' }
 #### int GetGlitchBabySubType ( ) {: .copyable aria-label='Functions' }
 
@@ -515,6 +537,21 @@ ___
 Returns the maximum charge for when the player stops shooting and charges the Kidney Stone item.
 
 ___
+### GetMaxBombs () {: aria-label='Functions' }
+#### int GetMaxBombs ( ) {: .copyable aria-label='Functions' }
+Returns the maximum number of bombs the player can currently hold.
+
+___
+### GetMaxCoins () {: aria-label='Functions' }
+#### int GetMaxCoins ( ) {: .copyable aria-label='Functions' }
+Returns the maximum number of coins the player can currently hold.
+
+___
+### GetMaxKeys () {: aria-label='Functions' }
+#### int GetMaxKeys ( ) {: .copyable aria-label='Functions' }
+Returns the maximum number of keys the player can currently hold.
+
+___
 ### GetMaxPeeBurstCooldown () {: aria-label='Functions' }
 #### int GetMaxPeeBurstCooldown ( ) {: .copyable aria-label='Functions' }
 Returns the maximum attack duration of the Kidney Stone item.
@@ -530,6 +567,11 @@ ___
 ___
 ### GetMetronomeCollectibleID () {: aria-label='Functions' }
 #### int GetMetronomeCollectibleID ( ) {: .copyable aria-label='Functions' }
+
+___
+### GetMovingBoxContents () {: aria-label='Functions' }
+#### [EntitiesSaveStateVector](EntitiesSaveStateVector.md) GetMovingBoxContents ( ) {: .copyable aria-label='Functions' }
+Returns the pickups that are stored on the player through the use of the Moving Box collectible.
 
 ___
 ### GetNextUrethraBlockFrame () {: aria-label='Functions' }
@@ -598,6 +640,15 @@ ___
 | CollectibleID | [CollectibleType](https://wofsauge.github.io/IsaacDocs/rep/enums/CollectibleType.html) | |
 | AppendedCount | int | |
 | IsBlocked | boolean | |
+
+___
+### GetTearDisplacement () {: aria-label='Functions' }
+#### int GetTearDisplacement ( ) {: .copyable aria-label='Functions' }
+Returns the player's TearDisplacement value, used to check what eye the player is shooting from.
+
+???+ info "Return info"
+    - `1` Right eye
+    - `-1` Left eye
 
 ___
 ### GetTotalActiveCharge () {: aria-label='Functions' }
@@ -812,6 +863,10 @@ Produces a random quantity of various pickups, similar to Tainted Cain's ability
     The provided [EntityPickup](EntityPickup.md) will be removed by this function. Use the override to avoid this.
 
 ___
+### SetActionHoldDrop () {: aria-label='Functions' }
+#### void SetActionHoldDrop ( int duration ) {: .copyable aria-label='Functions' }
+
+___
 ### SetActiveVarData () {: aria-label='Functions' }
 #### void SetActiveVarData ( int VarData, [ActiveSlot](https://wofsauge.github.io/IsaacDocs/rep/enums/ActiveSlot.html) Slot ) {: .copyable aria-label='Functions' }
 
@@ -921,6 +976,10 @@ ___
 ### SetFootprintColor () {: aria-label='Functions' }
 #### void SetFootprintColor ( [KColor](https://wofsauge.github.io/IsaacDocs/rep/KColor.html) color, boolean RightFoot = false ) {: .copyable aria-label='Functions' }
 Sets the player's footprint color.
+
+___
+### SetForgottenSwapFormCooldown () {: aria-label='Functions' }
+#### void SetForgottenSwapFormCooldown ( int Cooldown ) {: .copyable aria-label='Functions' }
 
 ___
 ### SetGnawedLeafTimer () {: aria-label='Functions' }

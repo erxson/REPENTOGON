@@ -37,7 +37,7 @@ ___
 
 ___
 ### GetItemConfig () {: aria-label='Functions' }
-#### [ItemConfigItem](ItemConfigItem.md) GetItemConfig ( ) {: .copyable aria-label='Functions' }
+#### [ItemConfigItem](ItemConfig_Item.md) GetItemConfig ( ) {: .copyable aria-label='Functions' }
 Returns the ItemConfigItem corresponding to the item that granted this familiar.
 
 Returns nil if the familiar was not spawned by an item.
@@ -48,8 +48,13 @@ ___
 Returns the amount in frames that the familiar's movements are delayed from the player's. 30 frames = 1 second.
 
 ___
-### GetPathFinder () {: aria-label='Functions' }
-#### [PathFinder](https://wofsauge.github.io/IsaacDocs/rep/PathFinder.html) GetPathFinder ( ) {: .copyable aria-label='Functions' }
+### GetMultiplier () {: aria-label='Functions' }
+#### float GetMultiplier ( ) {: .copyable aria-label='Functions' }
+Returns the "multiplier" for the familiar, from effects such as BFFs or Hive Mind. Typically used to multiply things such as familiar damage.
+
+___
+### GetPathfinder () {: aria-label='Functions' }
+#### [PathFinder](https://wofsauge.github.io/IsaacDocs/rep/PathFinder.html) GetPathfinder ( ) {: .copyable aria-label='Functions' }
 
 ___
 ### GetWeapon () {: aria-label='Functions' }
@@ -57,12 +62,25 @@ ___
 Returns `nil` for familiars that don't mimic the player's attacks (Incubus, etc).
 
 ___
+### InvalidateCachedMultiplier () {: aria-label='Functions' }
+#### void InvalidateCachedMultiplier ( ) {: .copyable aria-label='Functions' }
+Makes it so that the next time [GetMultiplier](EntityFamiliar.md#getmultiplier) is called, [MC_EVALUATE_FAMILIAR_MULTIPLIER](enums/ModCallbacks.md#mc_evaluate_familiar_multiplier) is triggered to recalculate/allow modifying the multiplier.
+
+___
 ### IsCharmed () {: aria-label='Functions' }
 #### boolean IsCharmed ( ) {: .copyable aria-label='Functions' }
 
 ___
+### IsLilDelirium () {: aria-label='Functions' }
+#### boolean IsLilDelirium ( ) {: .copyable aria-label='Functions' }
+
+___
 ### RemoveFromPlayer () {: aria-label='Functions' }
 #### void RemoveFromPlayer ( ) {: .copyable aria-label='Functions' }
+
+___
+### SetLilDelirium () {: aria-label='Functions' }
+#### void SetLilDelirium ( boolean isLilDelirium ) {: .copyable aria-label='Functions' }
 
 ___
 ### SetMoveDelayNum () {: aria-label='Functions' }

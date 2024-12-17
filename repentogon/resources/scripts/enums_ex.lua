@@ -52,6 +52,7 @@ ModCallbacks.MC_GET_SHOP_ITEM_PRICE = 1066
 ModCallbacks.MC_PLAYER_GET_HEALTH_TYPE = 1067
 ModCallbacks.MC_PRE_ROOM_TRIGGER_CLEAR = 1068
 ModCallbacks.MC_PRE_PLAYER_TRIGGER_ROOM_CLEAR = 1069
+ModCallbacks.MC_POST_PLAYER_TRIGGER_ROOM_CLEAR = 1138 --oops
 ModCallbacks.MC_PRE_RESTOCK_SHOP = 1070
 ModCallbacks.MC_POST_RESTOCK_SHOP = 1071
 ModCallbacks.MC_PLAYER_GET_ACTIVE_MAX_CHARGE = 1072
@@ -324,6 +325,8 @@ ModCallbacks.MC_POST_GRID_ENTITY_PRESSUREPLATE_RENDER = 1461
 ModCallbacks.MC_PRE_GRID_ENTITY_WALL_RENDER = 1462
 ModCallbacks.MC_POST_GRID_ENTITY_WALL_RENDER = 1463
 ModCallbacks.MC_MENU_INPUT_ACTION = 1464
+ModCallbacks.MC_PRE_STATUS_EFFECT_APPLY = 1465
+ModCallbacks.MC_POST_STATUS_EFFECT_APPLY = 1466
 
 ModCallbacks.MC_POST_SAVESLOT_LOAD = 1470
 ModCallbacks.MC_PRE_CHALLENGE_DONE = 1471
@@ -2779,6 +2782,25 @@ ConceptionFamiliarFlag = { -- bitwise
 	TWISTED_PAIR = 1 << 12,
 }
 
+StatusEffect = {
+	BAITED = 0,
+	BLEEDING = 1,
+	BRIMSTONE_MARK = 2,
+	BURN = 3,
+	CHARMED = 4,
+	CONFUSION = 5,
+	FEAR = 6,
+	FREEZE = 7,
+	ICE = 8,
+	KNOCKBACK = 9,
+	MAGNETIZED = 10,
+	MIDAS_FREEZE = 11,
+	POISON = 12,
+	SHRINK = 13,
+	SLOWING = 14,
+	WEAKNESS = 15,
+}
+
 CharacterMenuStatus = {
 	DEFAULT = 0,
 	SEED = 1,
@@ -2786,6 +2808,17 @@ CharacterMenuStatus = {
 	RANDOM_CHARACTER_SELECTION = 2,
 	FADEOUT = 3,
 	CHARACTER_PAPER_SWAP = 4,
+}
+
+DoorMask = {
+	LEFT0 = 1 << DoorSlot.LEFT0,
+	UP0 = 1 << DoorSlot.UP0,
+	RIGHT0 = 1 << DoorSlot.RIGHT0,
+	DOWN0 = 1 << DoorSlot.DOWN0,
+	LEFT1 = 1 << DoorSlot.LEFT1,
+	UP1 = 1 << DoorSlot.UP1,
+	RIGHT1 = 1 << DoorSlot.RIGHT1,
+	DOWN1 = 1 << DoorSlot.DOWN1,
 }
 
 --deprecated enums

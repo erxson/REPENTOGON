@@ -26,6 +26,7 @@
 #include "ASMPatches/ASMRoom.h"
 #include "ASMPatches/ASMStatusEffects.h"
 #include "ASMPatches/ASMTweaks.h"
+#include "ASMPatches/ASMXMLItem.h"
 
 #include "ASMPatcher.hpp"
 
@@ -193,6 +194,7 @@ void PerformASMPatches() {
 	ASMPatchesForCustomItemPools();
 	ExtraASMPatchesForCustomItemPools();
 	ASMPatchesForCardsExtras();
+	ASMPatchesForXMLItem();
 	HookImGui();
 
 	// Sprite
@@ -213,6 +215,10 @@ void PerformASMPatches() {
 
 	if (!ASMPatches::SkipArchiveChecksums()) {
 		ZHL::Log("[ERROR] Error while applying an archive checksum skip\n");
+	};
+
+	if (!ASMPatches::LeaderboarEntryCheckerUpdate()) {
+		ZHL::Log("[ERROR] Error while applying the leaderboard entry checker\n");
 	};
 
 	// This patch needs to be remade to include a toggle setting and fix glowing hourglass and the day before a release isn't the time for that

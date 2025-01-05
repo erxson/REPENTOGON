@@ -1,12 +1,9 @@
 name: Build Project and Upload Artifact
 
 on:
-  workflow_dispatch:
-  schedule:
-  - cron: "0 0 * * *"
-  pull_request:
+  push:
     branches:
-      - main
+      - repentance-plus
 
 env:
   BUILD_TYPE: Release
